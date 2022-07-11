@@ -17,12 +17,33 @@
 #include "framebuffer.h"
 #include "gl_debug.h"
 
-#include "triangulate.h"
+// #include "triangulate.h"
+#include "bpa.h"
 
 #include <iostream>
 
-std::vector<Vector3D*> genRandomPointCloud(std::size_t numPoints) {
-  std::vector<Vector3D*> out{};
+std::vector<Point> genSphericalCloud(int slices, int stacks) {
+  std::vector<Point> points;
+  points.emplace_back(Point{ { 0, 0, -1 }, { 0, 0, -1 } });
+  for (auto slice = 0; slice < slices; slice++) {
+	for (auto stack = 1; stack < stacks; stack++) {
+	  const auto yaw = (static_cast<double>(slice) / slices) * 2 * std::numbers::pi;
+	  const auto z = std::sin((static_cast<double>(stack) / stacks - 0.5) * std::numbers::pi);
+	  const auto r = std::sqrt(1 - z * z);
+
+	  glm::vec3 v;
+	  v.x = static_cast<float>(r * std::sin(yaw));
+	  v.y = static_cast<float>(r * std::cos(yaw));
+	  v.z = static_cast<float>(z);
+	  points.push_back({ v, glm::normalize(v - glm::vec3{}) });
+	}
+  }
+  points.emplace_back(Point{ { 0, 0, 1 }, { 0, 0, 1 } });
+  return points;
+}
+
+std::vector<Point> genRandomPointCloud(std::size_t numPoints) {
+  std::vector<Point> out{};
 
   std::random_device rd{};
   std::mt19937 engine{ rd() };
@@ -40,9 +61,9 @@ std::vector<Vector3D*> genRandomPointCloud(std::size_t numPoints) {
 	auto y = radius * std::sin(theta);
 	auto z = r;
 
-	if (pow(x, 2) + pow(y, 2) > radius - 0.01) {
-	  out.push_back(new Vector3D(x, y, z));
-	}
+	glm::vec3 normal{ 0.0f, 1.0f, 0.0f };
+
+	out.emplace_back(glm::vec3{ x, y, z }, normal);
   }
 
   return out;
@@ -57,7 +78,7 @@ int main() {
   Shader shader("res/shaders/basic.vs.glsl", "res/shaders/basic.fs.glsl");
   Shader lightShader("res/shaders/light_box.vs.glsl", "res/shaders/light_box.fs.glsl");
 
-  std::size_t numPoints = 500;
+  std::size_t numPoints = 50000;
 
   glm::vec3 pointLightPositions[] = {
 	glm::vec3(0.7f, 0.2f, 2.0f),
@@ -72,11 +93,15 @@ int main() {
 
   // Gen cloud
   auto cloud = genRandomPointCloud(numPoints);
+  // auto cloud = genSphericalCloud(200, 100);
 
   // Triangulate
-  auto triangulation = DelaunayTriangulation();
-  auto mesh = triangulation.GetTriangulationResult(cloud);
-  std::cout << triangulation.GetStatistics() << '\n';
+  /*
+	auto triangulation = DelaunayTriangulation();
+	auto mesh = triangulation.GetTriangulationResult(cloud);
+	std::cout << triangulation.GetStatistics() << '\n';
+  */
+  auto mesh = measuredReconstruct(cloud, 0.095f);
 
   shader.use();
 
@@ -87,12 +112,14 @@ int main() {
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 
+	/*
 	if (window.refresh) {
 	  window.refresh = false;
 	  triangulation = DelaunayTriangulation();
 	  mesh = triangulation.GetTriangulationResult(cloud);
 	  std::cout << triangulation.GetStatistics() << '\n';
 	}
+	*/
 
 	renderer.update();
 

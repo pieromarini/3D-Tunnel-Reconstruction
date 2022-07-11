@@ -5,9 +5,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "bpa.h"
 #include "gl_debug.h"
 #include "shader.h"
-#include "structures.h"
+// #include "structures.h"
 #include "window.h"
 #include "camera.h"
 #include "model.h"
@@ -376,6 +377,114 @@ class Renderer {
 	glBindVertexArray(0);
   }
 
+  void renderPoints(Shader& shader, std::vector<Point>& points) {
+	std::vector<float> vertices;
+
+	for (auto point : points) {
+	  vertices.push_back(point.pos.x);
+	  vertices.push_back(point.pos.y);
+	  vertices.push_back(point.pos.z);
+	}
+
+	unsigned int VAO = 0;
+	unsigned int VBO = 0;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	shader.use();
+
+	auto modelMat = glm::mat4(1.0f);
+	modelMat = glm::translate(modelMat, glm::vec3(1.0f));
+	modelMat = glm::scale(modelMat, glm::vec3(1.0f));
+	shader.setMat4("model", modelMat);
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
+
+	// reset
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, &VAO);
+  }
+
+  void renderMesh(Shader& shader, std::vector<Triangle>& mesh) {
+	std::vector<float> vertices;
+
+	for (auto triangle : mesh) {
+	  auto one = triangle[0];
+	  auto two = triangle[1];
+	  auto three = triangle[2];
+
+	  // Calculate surface normal
+	  auto normal = triangle.normal();
+
+	  vertices.push_back(one.x);
+	  vertices.push_back(one.y);
+	  vertices.push_back(one.z);
+
+	  vertices.push_back(normal.x);
+	  vertices.push_back(normal.y);
+	  vertices.push_back(normal.z);
+
+	  vertices.push_back(two.x);
+	  vertices.push_back(two.y);
+	  vertices.push_back(two.z);
+
+	  vertices.push_back(normal.x);
+	  vertices.push_back(normal.y);
+	  vertices.push_back(normal.z);
+
+	  vertices.push_back(three.x);
+	  vertices.push_back(three.y);
+	  vertices.push_back(three.z);
+
+	  vertices.push_back(normal.x);
+	  vertices.push_back(normal.y);
+	  vertices.push_back(normal.z);
+	}
+
+	unsigned int VAO = 0;
+	unsigned int VBO = 0;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(double)));
+	glEnableVertexAttribArray(1);
+
+	shader.use();
+
+	auto modelMat = glm::mat4(1.0f);
+	modelMat = glm::translate(modelMat, glm::vec3(1.0f));
+	modelMat = glm::scale(modelMat, glm::vec3(1.0f));
+	shader.setMat4("model", modelMat);
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
+
+	// reset
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, &VAO);
+  }
+
+  /*
   void renderPoints(Shader& shader, std::vector<Vector3D*>& points) {
 	std::vector<double> vertices;
 
@@ -464,7 +573,7 @@ class Renderer {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(double), vertices.data(), GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
+	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 6 * sizeof(double), (void*)0);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 6 * sizeof(double), (void*)(3 * sizeof(double)));
 	glEnableVertexAttribArray(1);
@@ -485,6 +594,7 @@ class Renderer {
 	glDeleteBuffers(1, &VBO);
 	glDeleteVertexArrays(1, &VAO);
   }
+  */
 
   void renderQuad() {
 	if (quadVAO == 0) {
