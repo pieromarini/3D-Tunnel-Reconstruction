@@ -51,7 +51,7 @@ include(cmake/SrcList.cmake)
 
 set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern")
 set(SOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(ENGINE_LIB "proyecto2")
+set(ENGINE_LIB "proyecto3")
 if(BUILD_SHARED_LIBS)
   add_library(${ENGINE_LIB} SHARED "${engine_sources}")
   set_target_properties(${ENGINE_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)

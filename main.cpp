@@ -78,7 +78,7 @@ int main() {
   Shader shader("res/shaders/basic.vs.glsl", "res/shaders/basic.fs.glsl");
   Shader lightShader("res/shaders/light_box.vs.glsl", "res/shaders/light_box.fs.glsl");
 
-  std::size_t numPoints = 50000;
+  std::size_t numPoints = 20000;
 
   glm::vec3 pointLightPositions[] = {
 	glm::vec3(0.7f, 0.2f, 2.0f),
